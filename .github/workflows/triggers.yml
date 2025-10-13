@@ -1,0 +1,96 @@
+# This is the name of the workflow as it will appear in the GitHub Actions UI.
+name: Triggers Workflow
+
+# The 'on' block defines the events that will trigger this workflow.
+on:
+  # This workflow runs when there is a push to the 'main' branch.
+  push:
+    branches: [ main ]
+    
+  # This workflow runs when a pull request is opened, synchronized, or closed targeting the 'main' branch.
+  pull_request:
+    branches: [ main ]
+    
+  # This workflow runs when an issue is opened, edited, or closed.
+  issues:
+    types: [opened, edited, closed]
+    
+  # This workflow runs when an issue comment is created or edited.
+  issue_comment:
+    types: [created, edited]
+    
+  # This workflow can be triggered manually from the GitHub Actions UI.
+  workflow_dispatch:
+    # Allows the user to provide a custom input message when triggering manually.
+    inputs:
+      message:
+        description: 'Custom message to display' # Description of the input field.
+        required: false                         # The input is optional.
+        default: 'Workflow triggered manually'  # Default value if not provided.
+        
+  # This workflow runs on a schedule, specifically every day at 9:00 AM UTC.
+  schedule:
+    - cron: '0 9 * * *'
+
+# The 'jobs' block defines what jobs will run as part of this workflow.
+jobs:
+  # This is a single job named 'multi-trigger-job'.
+  multi-trigger-job:
+    # The job will run on the latest version of Ubuntu.
+    runs-on: ubuntu-latest
+    # The steps to execute in this job.
+    steps:
+    # Step 1: Checks out the repository code so it can be used in later steps.
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    # Step 2: Displays information about what triggered the workflow.
+    - name: Display trigger information
+      run: |
+        echo "Workflow triggered by: ${{ github.event_name }}"   # Shows the event that triggered the workflow.
+        echo "Actor: ${{ github.actor }}"                        # Shows the user or app that triggered the workflow.
+        echo "Repository: ${{ github.repository }}"              # Shows the repository name.
+        echo "Ref: ${{ github.ref }}"                            # Shows the git ref (branch or tag).
+        
+    # Step 3: Handles different trigger types and prints relevant information for each.
+    - name: Handle different trigger types
+      run: |
+        case "${{ github.event_name }}" in
+          "push")
+            echo "This workflow was triggered by a push event"                       # Message for push event.
+            echo "Commit message: ${{ github.event.head_commit.message }}"           # Shows the commit message.
+            ;;
+          "pull_request")
+            echo "This workflow was triggered by a pull request"                     # Message for pull request event.
+            echo "PR title: ${{ github.event.pull_request.title }}"                  # Shows the pull request title.
+            ;;
+          "issues")
+            echo "This workflow was triggered by an issue event"                     # Message for issue event.
+            echo "Issue title: ${{ github.event.issue.title }}"                      # Shows the issue title.
+            echo "Issue action: ${{ github.event.action }}"                          # Shows the action (opened, edited, closed).
+            ;;
+          "issue_comment")
+            echo "This workflow was triggered by an issue comment"                   # Message for issue comment event.
+            echo "Comment body: ${{ github.event.comment.body }}"                    # Shows the comment body.
+            ;;
+          "workflow_dispatch")
+            echo "This workflow was triggered manually"                              # Message for manual trigger.
+            echo "Custom message: ${{ github.event.inputs.message }}"                # Shows the custom message input.
+            ;;
+          "schedule")
+            echo "This workflow was triggered by schedule"                           # Message for scheduled trigger.
+            ;;
+        esac
+        
+    # Step 4: Compiles and runs a Java program named HelloActions.java.
+    - name: Run Java program
+      run: |
+        javac HelloActions.java      # Compiles the Java source file.
+        java HelloActions            # Runs the compiled Java program.
+        
+    # Step 5: Displays a final message indicating the workflow has completed.
+    - name: Display final message
+      run: |
+        echo "Multi-triggers workflow completed successfully!"                       # Success message.
+        echo "Triggered by: ${{ github.event_name }}"                                # Repeats the event that triggered the workflow.
+
