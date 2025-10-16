@@ -1,0 +1,62 @@
+name: Expressions Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: Optional message (will fallback if empty)
+        required: false
+  push:
+    branches: [ main ]
+
+jobs:
+  demo:
+    name: Run on ${{ github.ref_name }} by ${{ github.actor }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Compute short SHA
+      run: echo "COMMIT_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+    - name: Set default user message
+      run: echo "USER_MESSAGE=Hola desde expressions" >> $GITHUB_ENV
+
+    - name: Override user message from dispatch input
+      if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.message && github.event.inputs.message != '' }}
+      run: echo "USER_MESSAGE=${{ github.event.inputs.message }}" >> $GITHUB_ENV
+
+    - name: Show context info
+      run: |
+        echo "Event: ${{ github.event_name }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Short SHA: $COMMIT_SHA_SHORT"
+        echo "User message: $USER_MESSAGE"
+
+    - name: Only on main branch
+      if: ${{ github.ref == 'refs/heads/main' }}
+      run: echo "This runs only on main"
+
+    - name: Skip on PRs, run otherwise
+      if: ${{ !startsWith(github.event_name, 'pull_request') }}
+      run: echo "Not a PR event"
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with: 
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Compile and run Java (only if file exists)
+      if: ${{ hashFiles('HelloActions.java') != '' }}
+      run: |
+        javac HelloActions.java
+        java HelloActions
+
+    - name: Final message
+      run: |
+        echo "Done: ${{ format('event={0}, ref={1}', github.event_name, github.ref) }}"
+
+
